@@ -82,17 +82,17 @@ public class git {
          // get file conents and sha1 hash
         StringBuffer contents = new StringBuffer();
         try {
-            FileReader f = new FileReader(filename);
-            BufferedReader file = new BufferedReader(f);
+            FileReader file = new FileReader(gitPath + File.separator +filename);
+            BufferedReader bufferReader = new BufferedReader(file);
 
-            char character = (char) file.read();
+            char character = (char) bufferReader.read();
 
             while (character != (char) -1) {
                 contents.append(character);
-                character = (char) file.read();
+                character = (char) bufferReader.read();
             }
         }catch(Exception e){
-            System.out.println(e);
+            System.out.println(e+"sss");
         }
 
         String contentsString = zip(contents.toString());
@@ -102,6 +102,7 @@ public class git {
          // create file in objects folder with name as the hash and same contents
         try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(objectsPath + File.separator+ hashCode))) {
            bufferedWriter.write(contents.toString());
+           bufferedWriter.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -111,14 +112,28 @@ public class git {
             BufferedWriter indexEditor = new BufferedWriter(new FileWriter(indexPath));
             indexEditor.write(hashCode + " " + filename);
             indexEditor.newLine();
+            indexEditor.close();
         }catch (IOException e){
             e.printStackTrace();
         }
     }
 
     // generates sha1 hashcode badsed on contents
-    private String sha1HashCode(String contents) {
-        return " ";
+    public String sha1HashCode(String contents) {
+        String result="";
+        try{
+            MessageDigest message = MessageDigest.getInstance("SHA-1");
+            byte [] array = message.digest(contents.getBytes());
+            for (byte i : array) {
+                result += String.format("%02x", i);
+            }
+            while (result.length() < 40) {
+                result = "0" + result;
+            }
+        }catch (NoSuchAlgorithmException e){
+            System.out.println(e);
+        }
+        return result;
     }
 
     private String zip(String contentsString){
