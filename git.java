@@ -1,12 +1,15 @@
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 public class git {
     String pathToDirectory = System.getProperty("user.dir");
@@ -77,12 +80,11 @@ public class git {
         System.out.println(deleted);
     }
 
-    
-    public void blob(String filename){
-         // get file conents and sha1 hash
+    public void blob(String filename) {
+        // get file conents and sha1 hash
         StringBuffer contents = new StringBuffer();
         try {
-            FileReader file = new FileReader(gitPath + File.separator +filename);
+            FileReader file = new FileReader(gitPath + File.separator + filename);
             BufferedReader bufferReader = new BufferedReader(file);
 
             char character = (char) bufferReader.read();
@@ -91,56 +93,96 @@ public class git {
                 contents.append(character);
                 character = (char) bufferReader.read();
             }
-        }catch(Exception e){
-            System.out.println(e+"sss");
+        } catch (Exception e) {
+            System.out.println(e + "sss");
         }
+        String hashCode = "";
+        if (zip == 1) {
+            // make zip file
 
-        String contentsString = zip(contents.toString());
+            String zipFileName = filename + "zip";
+            zip(contents.toString(), zipFileName, filename);
 
-        String hashCode = sha1HashCode(contentsString);
-        
-         // create file in objects folder with name as the hash and same contents
-        try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(objectsPath + File.separator+ hashCode))) {
-           bufferedWriter.write(contents.toString());
-           bufferedWriter.close();
+            try {
+                // hash ziped coneents
+                StringBuffer zippedContents = new StringBuffer();
+                FileReader file = new FileReader(gitPath + File.separator + zipFileName);
+                BufferedReader reader = new BufferedReader(file);
+
+                char character = (char) reader.read();
+
+                while (character != (char) -1) {
+                    zippedContents.append(character);
+                    character = (char) reader.read();
+                }
+
+                System.out.println("is " + reader.readLine());
+
+                contents = zippedContents;
+                filename = zipFileName;
+            } catch (Exception e) {
+                System.out.println(e);
+            }
+        }
+        hashCode = sha1HashCode(contents.toString());
+        // create file in objects folder with name as the hash and same contents
+        try (BufferedWriter bufferedWriter = new BufferedWriter(
+                new FileWriter(objectsPath + File.separator + hashCode))) {
+            bufferedWriter.write(contents.toString());
+            bufferedWriter.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
 
         // write the hash [space] filename as a line in index
-        try{
+        try {
             BufferedWriter indexEditor = new BufferedWriter(new FileWriter(indexPath));
             indexEditor.write(hashCode + " " + filename);
             indexEditor.newLine();
             indexEditor.close();
-        }catch (IOException e){
+        } catch (IOException e) {
             e.printStackTrace();
         }
+
     }
 
     // generates sha1 hashcode badsed on contents
     public String sha1HashCode(String contents) {
-        String result="";
-        try{
+        String result = "";
+        try {
             MessageDigest message = MessageDigest.getInstance("SHA-1");
-            byte [] array = message.digest(contents.getBytes());
+            byte[] array = message.digest(contents.getBytes());
             for (byte i : array) {
                 result += String.format("%02x", i);
             }
             while (result.length() < 40) {
                 result = "0" + result;
             }
-        }catch (NoSuchAlgorithmException e){
+        } catch (NoSuchAlgorithmException e) {
             System.out.println(e);
         }
         return result;
     }
 
-    private String zip(String contentsString){
-        String result = contentsString;
-        if (zip == 1){
-           
+    private String zip(String contentsString, String zipFileName, String FileName) {
+        try {
+            String result = contentsString;
+
+            File zipFile = new File(gitPath + File.separator + zipFileName);
+            ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zipFile));
+            ZipEntry zipEntry = new ZipEntry(FileName);
+            out.putNextEntry(zipEntry);
+
+            byte[] data = result.getBytes();
+            out.write(data, 0, data.length);
+            out.closeEntry();
+
+            out.close();
+
+            return result;
+        } catch (IOException e) {
+            System.out.println(e);
         }
-        return result;
+        return "";
     }
 }
