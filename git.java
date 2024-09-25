@@ -17,7 +17,7 @@ public class git {
     String objectsPath = gitPath + File.separator + "objects";
     String indexPath = gitPath + File.separator + "index";
 
-    int zip = 0;
+    int zip = 1;
 
     // checks if files/directories exist then creates them
     public void initializeRepository() {
@@ -152,6 +152,8 @@ public class git {
         try {
             MessageDigest message = MessageDigest.getInstance("SHA-1");
             byte[] array = message.digest(contents.getBytes());
+            System.out.println("Binary of contents:"+ contents.getBytes());
+            //use above to test zip contents, by converting binary to zip online
             for (byte i : array) {
                 result += String.format("%02x", i);
             }
