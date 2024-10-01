@@ -12,7 +12,7 @@ import java.util.stream.Stream;
 
 public class initializeRepositoryTester {
 
-    static void traverse(String nextExpected){
+    static void traverse(String nextExpected, String indexContents, String testFolder){
         try{
             String treeContent = Files.readString(Paths.get("git"+File.separator+"objects"+File.separator+nextExpected));
             
@@ -20,11 +20,18 @@ public class initializeRepositoryTester {
             
             for (int i = 0; i < lines.length; i++){
                 String[] lineContent = lines[i].split(" ");
-                if (lineContent[0].equals("tree")){
-                    traverse(lineContent[1]);
+                if (indexContents.contains(lines[i])){
+                    System.out.print("Index Contains File/Folder: ");
                 }
                 else{
-                    Path pathToActualFile = findByFileName(Paths.get("test"), lineContent[2]).get(0);
+                    System.out.print("Index DOES NOT CONTAIN File/Folder: ");
+                }
+                System.out.println(lineContent[2]);
+                if (lineContent[0].equals("tree")){ 
+                    traverse(lineContent[1], indexContents, testFolder); //traversability is enough to indicate correct hashes
+                }
+                else{
+                    Path pathToActualFile = findByFileName(Paths.get(testFolder), lineContent[2]).get(0);
                     String correctHash = git.sha1HashCode(Files.readString(pathToActualFile)); //rely on Hash Function to work
                     if (lineContent[1].equals(correctHash)){
                         System.out.print("Correct Hash for the following: ");
@@ -61,26 +68,51 @@ public class initializeRepositoryTester {
 
         git test = new git();
 
+        String testFolder = "testFolder";
+
         test.initializeRepository();
 
         test.deleteReopsitory();
 
         test.initializeRepository();
 
-        test.generateAllTrees(Paths.get("test"));
+        test.generateAllTrees(Paths.get(testFolder));
+
+        String indexContents = "";
+        try{
+            indexContents = Files.readString(Paths.get("git"+File.separator+"index"));
+        }
+        catch (IOException e){
+            e.printStackTrace();
+        }
 
         try{
-            String testFolderHash = "8b90bec967664846c02a1bed968044fb1b991030"; //must be correct for the test to run
+            String testFolderHash = "4bd82b4983fdad505b2f1ef2a310ae64e4dbaa41"; //must be correct for the test to run
             String treeContent = Files.readString(Paths.get("git"+File.separator+"objects"+File.separator+testFolderHash));
+
+            if (indexContents.contains("tree " + testFolderHash + " " + testFolder)){
+                System.out.println("Index Contains root folder: " + testFolder );
+            }
+            else{
+                System.out.println("Index DOES NOT CONTAIN root folder: " + testFolder);
+            }
             
             String[] lines = treeContent.split("\n");
             for (int i = 0; i < lines.length; i++){
+                
                 String[] lineContent = lines[i].split(" ");
-                if (lineContent[0].equals("tree")){
-                    traverse(lineContent[1]);
+                if (indexContents.contains(lines[i])){
+                    System.out.print("Index Contains File/Folder: ");
                 }
                 else{
-                    Path pathToActualFile = findByFileName(Paths.get("test"), lineContent[2]).get(0);
+                    System.out.print("Index DOES NOT CONTAIN File/Folder: ");
+                }
+                System.out.println(lineContent[2]);
+                if (lineContent[0].equals("tree")){
+                    traverse(lineContent[1], indexContents, testFolder);
+                }
+                else{
+                    Path pathToActualFile = findByFileName(Paths.get(testFolder), lineContent[2]).get(0);
                     String correctHash = git.sha1HashCode(Files.readString(pathToActualFile)); //rely on Hash Function to work
                     if (lineContent[1].equals(correctHash)){
                         System.out.print("Correct Hash for the following: ");
@@ -91,6 +123,8 @@ public class initializeRepositoryTester {
                     System.out.println(lineContent[1] + " " + lineContent[2]);
                 }
             }
+
+
         }
         catch (IOException e){
             System.out.println("A file that is supposed to exist doesn't");

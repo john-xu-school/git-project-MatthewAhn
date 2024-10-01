@@ -1,15 +1,7 @@
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -85,7 +77,6 @@ public class git {
         try (Stream<Path> walk = Files.walk(Paths.get("git"))) {
             walk.sorted(Comparator.reverseOrder())
             .map(Path::toFile)
-            .peek(System.out::println)
             .forEach(File::delete);
         }
         catch (IOException e){
@@ -100,7 +91,7 @@ public class git {
         try {
             FileReader file = new FileReader(path.toString());
             String filename = path.getFileName().toString();
-            System.out.println(filename);
+            //System.out.println(filename);
             BufferedReader bufferReader = new BufferedReader(file);
 
             char character = (char) bufferReader.read();
@@ -163,68 +154,59 @@ public class git {
     }
 
     public void generateAllTrees(Path path) {
-        System.out.println("====");
         try{
-            List<Path> allFiles = new ArrayList<>();
-            String initContent = "";
-            File[] initListOfFiles = path.toFile().listFiles();
+            String rootName = sha1HashCode(listAllFiles(path, null, ""));
+            Files.write(Paths.get("git"+File.separator+"index"), ("tree " + rootName + " " + path.toFile().getName() + "\n").getBytes(), StandardOpenOption.APPEND);
             
-            if(initListOfFiles != null) {
-                for (int i = 0; i < initListOfFiles.length; i++) {
-                    System.out.println (initListOfFiles[i].getPath().toString());
-                    if (initListOfFiles[i].isFile()) {
-                        blob(Paths.get(initListOfFiles[i].getPath()));
-                        initContent += "blob " + sha1HashCode(Files.readString(Paths.get(initListOfFiles[i].getPath()))) + " " + initListOfFiles[i].getName() + "\n";
-                    }
-                    else if (initListOfFiles[i].isDirectory()){
-                        String hashCode = sha1HashCode(listAllFiles(path, allFiles));
-                        initContent += "tree " + hashCode + " " + initListOfFiles[i].getName() + "\n";
-                        Files.write(Paths.get("git"+File.separator+"index"), ("tree " + hashCode + " " + initListOfFiles[i].getName() + "\n").getBytes(), StandardOpenOption.APPEND);
-                    }
-                }
-            }
-            String initTreeName = sha1HashCode(initContent);
-            Files.write(Paths.get("git"+File.separator+"objects"+File.separator+initTreeName), initContent.getBytes());
         }
         catch (IOException e){
             e.printStackTrace();
         }
-        System.out.println("====");
+        
         
     }
 
     //https://www.geeksforgeeks.org/list-all-files-from-a-directory-recursively-in-java/
-    private String listAllFiles(Path currentPath, List<Path> allFiles) throws IOException 
+    private String listAllFiles(Path currentPath, List<Path> allFiles, String content) throws IOException 
     {
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(currentPath)) 
         {
             for (Path entry : stream) {
                 if (Files.isDirectory(entry)) {
-                    String content = "";
                     File[] listOfFiles = entry.toFile().listFiles();
+                    String curContent = "";
                     if(listOfFiles != null) {
                         for (int i = 0; i < listOfFiles.length; i++) {
                             if (listOfFiles[i].isFile()) {
                                 blob(Paths.get(listOfFiles[i].getPath()));
-                                content += "blob " + sha1HashCode(Files.readString(Paths.get(listOfFiles[i].getPath()))) + " " + listOfFiles[i].getName() + "\n";
+                                curContent += "blob " + sha1HashCode(Files.readString(Paths.get(listOfFiles[i].getPath()))) + " " + listOfFiles[i].getName() + "\n";
                             }
                             else if (listOfFiles[i].isDirectory()){
-                                String hashCode = sha1HashCode(listAllFiles(entry, allFiles));
-                                content += "tree " + hashCode + " " + listOfFiles[i].getName() + "\n";
+                                String hashCode = sha1HashCode(listAllFiles(Paths.get(listOfFiles[i].getPath()), allFiles, ""));
+                                curContent += "tree " + hashCode + " " + listOfFiles[i].getName() + "\n";
                                 Files.write(Paths.get("git"+File.separator+"index"), ("tree " + hashCode + " " + listOfFiles[i].getName() + "\n").getBytes(), StandardOpenOption.APPEND);
                             }
                         }
                     }
-                    String treeName = sha1HashCode(content);
-                    Files.write(Paths.get("git"+File.separator+"objects"+File.separator+treeName), content.getBytes());
-                    return content;
+                    
+                    String curTreeName = sha1HashCode(curContent);
+                    Files.write(Paths.get("git"+File.separator+"objects"+File.separator+curTreeName), curContent.getBytes());
+
+                    content += "tree " + curTreeName + " " + entry.toFile().getName() + "\n";
+                    Files.write(Paths.get("git"+File.separator+"index"), ("tree " + curTreeName + " " + entry.toFile().getName() + "\n").getBytes(), StandardOpenOption.APPEND);
+                    
+                    
                 } else {
+                    content += "blob " + sha1HashCode(Files.readString(entry)) + " " + entry.toFile().getName() + "\n";
                     blob(entry);
-                    allFiles.add(entry);
-                    return "";
                 }
+                
             }
-            return "";
+
+            String hashedFinalTreeName = sha1HashCode(content);
+            Files.write(Paths.get("git"+File.separator+"objects"+File.separator+hashedFinalTreeName), content.getBytes());
+            // Files.write(Paths.get("git"+File.separator+"index"), ("tree " + hashedFinalTreeName + " " + currentPath.toFile().getName() + "\n").getBytes(), StandardOpenOption.APPEND);
+            return content;
         }
     }
     
