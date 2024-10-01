@@ -184,7 +184,7 @@ public class git {
                             else if (listOfFiles[i].isDirectory()){
                                 String hashCode = sha1HashCode(listAllFiles(Paths.get(listOfFiles[i].getPath()), allFiles, ""));
                                 curContent += "tree " + hashCode + " " + listOfFiles[i].getName() + "\n";
-                                Files.write(Paths.get("git"+File.separator+"index"), ("tree " + hashCode + " " + listOfFiles[i].getName() + "\n").getBytes(), StandardOpenOption.APPEND);
+                                Files.write(Paths.get("git"+File.separator+"index"), ("tree " + hashCode + " " + listOfFiles[i].getPath() + "\n").getBytes(), StandardOpenOption.APPEND);
                             }
                         }
                     }
@@ -193,7 +193,7 @@ public class git {
                     Files.write(Paths.get("git"+File.separator+"objects"+File.separator+curTreeName), curContent.getBytes());
 
                     content += "tree " + curTreeName + " " + entry.toFile().getName() + "\n";
-                    Files.write(Paths.get("git"+File.separator+"index"), ("tree " + curTreeName + " " + entry.toFile().getName() + "\n").getBytes(), StandardOpenOption.APPEND);
+                    Files.write(Paths.get("git"+File.separator+"index"), ("tree " + curTreeName + " " + entry.toFile().getPath() + "\n").getBytes(), StandardOpenOption.APPEND);
                     
                     
                 } else {
