@@ -31,7 +31,9 @@ public class initializeRepositoryTester {
                     traverse(lineContent[1], indexContents, testFolder); //traversability is enough to indicate correct hashes
                 }
                 else{
-                    Path pathToActualFile = findByFileName(Paths.get(testFolder), lineContent[2]).get(0);
+                    String[] linePath = lineContent[2].split("/");
+                    System.out.println(linePath[linePath.length - 1]);
+                    Path pathToActualFile = findByFileName(Paths.get(testFolder), linePath[linePath.length - 1]).get(0);
                     String correctHash = git.sha1HashCode(Files.readString(pathToActualFile)); //rely on Hash Function to work
                     if (lineContent[1].equals(correctHash)){
                         System.out.print("Correct Hash for the following: ");
@@ -87,7 +89,7 @@ public class initializeRepositoryTester {
         }
 
         try{
-            String testFolderHash = "4bd82b4983fdad505b2f1ef2a310ae64e4dbaa41"; //must be correct for the test to run
+            String testFolderHash = "438f8338605b5fdbe491525869439f56a8e8d396"; //must be correct for the test to run
             String treeContent = Files.readString(Paths.get("git"+File.separator+"objects"+File.separator+testFolderHash));
 
             if (indexContents.contains("tree " + testFolderHash + " " + testFolder)){
@@ -107,12 +109,14 @@ public class initializeRepositoryTester {
                 else{
                     System.out.print("Index DOES NOT CONTAIN File/Folder: ");
                 }
+                System.out.println(lines[i]);
                 System.out.println(lineContent[2]);
                 if (lineContent[0].equals("tree")){
                     traverse(lineContent[1], indexContents, testFolder);
                 }
                 else{
-                    Path pathToActualFile = findByFileName(Paths.get(testFolder), lineContent[2]).get(0);
+                    String[] linePath = lineContent[2].split("/");
+                    Path pathToActualFile = findByFileName(Paths.get(testFolder), linePath[linePath.length - 1]).get(0);
                     String correctHash = git.sha1HashCode(Files.readString(pathToActualFile)); //rely on Hash Function to work
                     if (lineContent[1].equals(correctHash)){
                         System.out.print("Correct Hash for the following: ");

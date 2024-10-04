@@ -90,7 +90,7 @@ public class git {
         StringBuffer contents = new StringBuffer();
         try {
             FileReader file = new FileReader(path.toString());
-            String filename = path.getFileName().toString();
+            String filename = path.toString();
             //System.out.println(filename);
             BufferedReader bufferReader = new BufferedReader(file);
 
@@ -156,7 +156,7 @@ public class git {
     public void generateAllTrees(Path path) {
         try{
             String rootName = sha1HashCode(listAllFiles(path, null, ""));
-            Files.write(Paths.get("git"+File.separator+"index"), ("tree " + rootName + " " + path.toFile().getName() + "\n").getBytes(), StandardOpenOption.APPEND);
+            Files.write(Paths.get("git"+File.separator+"index"), ("tree " + rootName + " " + path.toString() + "\n").getBytes(), StandardOpenOption.APPEND);
             
         }
         catch (IOException e){
@@ -179,11 +179,11 @@ public class git {
                         for (int i = 0; i < listOfFiles.length; i++) {
                             if (listOfFiles[i].isFile()) {
                                 blob(Paths.get(listOfFiles[i].getPath()));
-                                curContent += "blob " + sha1HashCode(Files.readString(Paths.get(listOfFiles[i].getPath()))) + " " + listOfFiles[i].getName() + "\n";
+                                curContent += "blob " + sha1HashCode(Files.readString(Paths.get(listOfFiles[i].getPath()))) + " " + listOfFiles[i].getPath() + "\n";
                             }
                             else if (listOfFiles[i].isDirectory()){
                                 String hashCode = sha1HashCode(listAllFiles(Paths.get(listOfFiles[i].getPath()), allFiles, ""));
-                                curContent += "tree " + hashCode + " " + listOfFiles[i].getName() + "\n";
+                                curContent += "tree " + hashCode + " " + listOfFiles[i].getPath() + "\n";
                                 Files.write(Paths.get("git"+File.separator+"index"), ("tree " + hashCode + " " + listOfFiles[i].getPath() + "\n").getBytes(), StandardOpenOption.APPEND);
                             }
                         }
@@ -192,12 +192,12 @@ public class git {
                     String curTreeName = sha1HashCode(curContent);
                     Files.write(Paths.get("git"+File.separator+"objects"+File.separator+curTreeName), curContent.getBytes());
 
-                    content += "tree " + curTreeName + " " + entry.toFile().getName() + "\n";
-                    Files.write(Paths.get("git"+File.separator+"index"), ("tree " + curTreeName + " " + entry.toFile().getPath() + "\n").getBytes(), StandardOpenOption.APPEND);
+                    content += "tree " + curTreeName + " " + entry.toString() + "\n";
+                    Files.write(Paths.get("git"+File.separator+"index"), ("tree " + curTreeName + " " + entry.toString() + "\n").getBytes(), StandardOpenOption.APPEND);
                     
                     
                 } else {
-                    content += "blob " + sha1HashCode(Files.readString(entry)) + " " + entry.toFile().getName() + "\n";
+                    content += "blob " + sha1HashCode(Files.readString(entry)) + " " + entry.toString() + "\n";
                     blob(entry);
                 }
                 
